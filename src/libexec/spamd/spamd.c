@@ -43,6 +43,11 @@
 
 #include <netdb.h>
 
+#ifndef __OpenBSD__
+#define HOST_NAME_MAX _SC_HOST_NAME_MAX
+#include "syslog_r.h"
+#endif
+
 #include "sdl.h"
 #include "grey.h"
 #include "sync.h"
@@ -1246,7 +1251,11 @@ main(int argc, char *argv[])
 	int error;
 
 	tzset();
+	#ifdef __OpenBSD__
 	openlog_r("spamd", LOG_PID | LOG_NDELAY, LOG_DAEMON, &sdata);
+	#else
+	openlog("spamd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	#endif
 
 	if ((ent = getservbyname("spamd", "tcp")) == NULL)
 		errx(1, "Can't find service \"spamd\" in /etc/services");
@@ -1533,8 +1542,10 @@ main(int argc, char *argv[])
 	}
 
 jail:
+#ifdef __OpenBSD__
 	if (pledge("stdio inet", NULL) == -1)
 		err(1, "pledge");
+#endif
 
 	if (listen(smtplisten, 10) == -1)
 		err(1, "listen");

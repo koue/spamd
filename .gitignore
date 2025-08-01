@@ -1,0 +1,6 @@
+.depend
+*.o
+*.debug
+*.full
+*.gz
+src/libexec/spamd/spamd

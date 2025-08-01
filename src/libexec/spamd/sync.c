@@ -30,7 +30,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef __OpenBSD__
 #include <sha1.h>
+#else
+#include <sha.h>
+#endif
 #include <syslog.h>
 #include <stdint.h>
 
@@ -42,7 +46,9 @@
 #include "grey.h"
 #include "sync.h"
 
+#ifdef __OpenBSD__
 extern struct syslog_data sdata;
+#endif
 extern int debug;
 extern FILE *grey;
 extern int greylist;
@@ -142,7 +148,11 @@ sync_init(const char *iface, const char *baddr, u_short port)
 		}
 	}
 
+	#ifdef __OpenBSD__
 	sync_key = SHA1File(SPAM_SYNC_KEY, NULL);
+	#else
+	sync_key = SHA1_File(SPAM_SYNC_KEY, NULL);
+	#endif
 	if (sync_key == NULL) {
 		if (errno != ENOENT) {
 			fprintf(stderr, "failed to open sync key: %s\n",

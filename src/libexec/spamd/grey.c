@@ -40,6 +40,10 @@
 #include "grey.h"
 #include "sync.h"
 
+#ifndef __OpenBSD__
+#include "syslog_r.h"
+#endif
+
 extern time_t passtime, greyexp, whiteexp, trapexp;
 extern struct syslog_data sdata;
 extern struct passwd *pw;
@@ -1077,6 +1081,7 @@ greywatcher(void)
 
 	drop_privs();
 
+#ifdef __OpenBSD__
 	if (unveil(PATH_SPAMD_DB, "rw") == -1) {
 		syslog_r(LOG_ERR, &sdata, "unveil failed (%m)");
 		exit(1);
@@ -1093,6 +1098,7 @@ greywatcher(void)
 		syslog_r(LOG_ERR, &sdata, "pledge failed (%m)");
 		exit(1);
 	}
+#endif
 		
 	startup = time(NULL);
 	db_pid = fork();
