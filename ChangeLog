@@ -123,9 +123,28 @@
 
 	  ok guenther@ tb@ deraadt@
 
+2018-07-26 19:33  mestre
+
+	* usr.sbin/spamdb/spamdb.c: zap whitespaces
+
+2018-07-26 19:32  mestre
+
+	* usr.sbin/spamdb/spamdb.c: reduce pledge(2) to the bare minimum:
+	  after dbopen(3) occurs then all operations are on fds which don't
+	  need rpath/wpath and therefore spamdb(8) only needs stdio at all
+	  times after the DB was already open(2)ed
+
+	  great input from semarie@ OK deraadt@
+
 2018-04-26 08:57  beck
 
 	* libexec/spamd/spamd.c: nuke trailing whitespace
+
+2017-10-29 19:11  millert
+
+	* usr.sbin/spamdb/: spamdb.8, spamdb.c: Allow keys to be specified
+	  on the command line in list mode, for looking up specific keys.
+	  OK phessler@ jmc@
 
 2017-10-18 17:31  millert
 
@@ -147,6 +166,26 @@
 	* libexec/spamd/spamd.c: Check for asprintf() returning -1 instead
 	  of assuming that the pointer will remain unchanged when fails.
 	  OK deraadt@
+
+2017-10-12 09:28  jmc
+
+	* usr.sbin/spamdb/spamdb.c: add -G to usage();
+
+2017-10-11 18:25  millert
+
+	* usr.sbin/spamdb/: spamdb.8, spamdb.c: Allow GREY entries to be
+	  removed by IP address.  OK beck@
+
+2017-07-07 00:10  djm
+
+	* libexec/spamd-setup/spamd-setup.c: allow fetching lists from
+	  https:// URLs too
+
+2017-07-07 00:09  djm
+
+	* libexec/spamd-setup/spamd-setup.c: switch user to _spamd before
+	  executing ftp(1) to fetch lists.  sprinkle in some closefrom(2);
+	  ok deraadt@ beck@
 
 2017-04-06 15:30  beck
 
@@ -207,6 +246,15 @@
 
 	  Feedback and OK jsing@
 
+2016-11-29 17:21  mestre
+
+	* usr.sbin/spamdb/spamdb.c: When action == 0 (spamdb(8) without
+	  arguments) it only reads the DB so it only needs to pledge for
+	  "rpath" and for all other cases since it needs to write as well
+	  then give it "rpath wpath".
+
+	  "seems right" deraadt@
+
 2016-11-08 09:31  mestre
 
 	* libexec/spamd/spamd.c: Remove redundant & when clearing hostname
@@ -265,6 +313,12 @@
 	* libexec/spamd/spamd.c: per rfc, ehlo responses contain hostname,
 	  then options. from dyn+bsd
 
+2016-03-31 15:54  schwarze
+
+	* libexec/spamd-setup/spamd-setup.8: Don't use .Aq for syntax
+	  elements that require ASCII "<>".  Bug reported by Christian
+	  Heckendorf <mbie at ulmus dot me>, patch by me.  OK jmc@ bentley@
+
 2016-03-25 16:31  mestre
 
 	* libexec/spamd/: grey.c, spamd.c: - Both checks for pw are not
@@ -283,9 +337,25 @@
 
 	  OK beck@
 
+2016-01-04 09:15  mestre
+
+	* libexec/spamd-setup/spamd-setup.c: pledge(2) spamd-setup(8)
+
+	  It needs these annotations, to at least run the operations next
+	  to them:
+
+	  stdio: malloc(3) rpath: open(2) inet: connect(2)/socket(2) proc:
+	  fork(2) exec: execvp(3)
+
+	  While here remove netinet/in.h since all we need is already in
+	  arpa/inet.h and sort the headers alphabetically
+
+	  OK beck@
+
 2015-12-12 20:09  mmcc
 
-	* libexec/spamd/spamd.c: Remove NULL-checks before free(). ok tb@
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: Remove
+	  NULL-checks before free(). ok tb@
 
 2015-12-10 16:06  beck
 
@@ -330,6 +400,12 @@
 	* libexec/spamd/grey.c: Document that the pfdev check for 63 is
 	  /dev/fd/ only contains those nodes
 
+2015-11-11 16:10  deraadt
+
+	* usr.sbin/spamdb/spamdb.c: bottom end of spamdb is just "stdio
+	  rpath wpath" originally from ricardo mestre, but diff was cut
+	  down a bit
+
 2015-09-10 13:56  beck
 
 	* libexec/spamd/spamd.c: read, tls_read, and tls_write return
@@ -356,6 +432,13 @@
 	  macros where appropriate.
 
 	  ok jmc@
+
+2015-06-03 02:24  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Do not assume that asprintf()
+	  clears the pointer on failure, which is non-portable.  Also add
+	  missing asprintf() return value checks.  OK deraadt@ guenther@
+	  doug@
 
 2015-05-18 16:04  reyk
 
@@ -438,16 +521,34 @@
 	  mafia the middle finger by not needing them at all.  ok reyk
 	  jsing bob
 
+2015-01-20 16:54  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Allocate a bit more memory to
+	  reduce the change of having to realloc() which is expensive for
+	  large blacklists.
+
+2015-01-19 19:25  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: Does not need
+	  netinet/ip_ipsp.h
+
 2015-01-16 06:39  deraadt
 
-	* libexec/spamd/spamd.c: Replace <sys/param.h> with <limits.h> and
-	  other less dirty headers where possible.  Annotate <sys/param.h>
-	  lines with their current reasons.  Switch to PATH_MAX,
-	  NGROUPS_MAX, HOST_NAME_MAX+1, LOGIN_NAME_MAX, etc.  Change MIN()
-	  and MAX() to local definitions of MINIMUM() and MAXIMUM() where
-	  sensible to avoid pulling in the pollution.  These are the files
-	  confirmed through binary verification.  ok guenther, millert,
-	  doug (helped with the verification protocol)
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: Replace
+	  <sys/param.h> with <limits.h> and other less dirty headers where
+	  possible.  Annotate <sys/param.h> lines with their current
+	  reasons.  Switch to PATH_MAX, NGROUPS_MAX, HOST_NAME_MAX+1,
+	  LOGIN_NAME_MAX, etc.	Change MIN() and MAX() to local definitions
+	  of MINIMUM() and MAXIMUM() where sensible to avoid pulling in the
+	  pollution.  These are the files confirmed through binary
+	  verification.  ok guenther, millert, doug (helped with the
+	  verification protocol)
+
+2015-01-14 11:59  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Replace "errx(1, "malloc
+	  failed")" with "err(1, NULL)" to get standard "Cannot allocate
+	  memory" message.
 
 2015-01-13 23:22  millert
 
@@ -458,13 +559,19 @@
 
 	* libexec/spamd/spamd.c: Remove bogus getopt.h include.
 
+2015-01-13 21:45  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Fix printing of number of
+	  whitelist entries in debug mode.
+
 2015-01-13 21:42  millert
 
-	* libexec/spamd/: grey.c, sdl.c, sdl.h, spamd.c: Use address-family
-	  specific lists of addr/mask entries instead of a union that can
-	  store either ipv4 or ipv6.  The old method used 4x as much memory
-	  as was really needed for ipv4.  The spamd-setup protocol has
-	  changed from: tag;message;a/m;a/m;a/m...\n to
+	* libexec/: spamd/grey.c, spamd/sdl.c, spamd/sdl.h, spamd/spamd.c,
+	  spamd-setup/spamd-setup.c: Use address-family specific lists of
+	  addr/mask entries instead of a union that can store either ipv4
+	  or ipv6.  The old method used 4x as much memory as was really
+	  needed for ipv4.  The spamd-setup protocol has changed from:
+	  tag;message;a/m;a/m;a/m...\n to
 	  :tag;message;af;count;a/m;a/m;a/m...[af;count;a/m;a/m;a/m]\n OK
 	  phessler@ "nice" beck@
 
@@ -523,8 +630,8 @@
 
 2014-10-09 02:43  deraadt
 
-	* libexec/spamd/: grey.c, spamd.c: obvious reallocarray()
-	  conversions
+	* libexec/: spamd/grey.c, spamd/spamd.c, spamd-setup/spamd-setup.c:
+	  obvious reallocarray() conversions
 
 2014-09-16 21:16  jmc
 
@@ -537,6 +644,11 @@
 
 	  ok beck@
 
+2014-06-22 15:11  schwarze
+
+	* usr.sbin/spamdb/spamdb.8: missing .Pa macro below FILES; patch
+	  from Jan Stary <hans at stare dot cz>
+
 2014-03-26 13:09  gsoares
 
 	* libexec/spamd/spamd.c: strdup() returns NULL if out of memory, we
@@ -547,6 +659,11 @@
 2013-11-27 21:25  deraadt
 
 	* libexec/spamd/grey.c: unsigned char for ctype ok okan kettenis
+
+2013-11-24 01:06  deraadt
+
+	* usr.sbin/spamdb/spamdb.c: more unsigned char casts for ctype ok
+	  jca
 
 2013-11-19 18:33  deraadt
 
@@ -563,23 +680,51 @@
 	* libexec/spamd/sync.c: the time being handled here is strictly
 	  unsigned 32 bit ok beck phessler
 
+2013-11-15 22:20  millert
+
+	* usr.sbin/spamdb/spamdb.c: Include unistd.h as it is the standard
+	  location for getopt().
+
+2013-09-15 20:02  schwarze
+
+	* libexec/spamd-setup/spamd-setup.8: Some missing .Pa macros in
+	  FILES sections; from Jan Stary <hans at stare dot cz>; discussed
+	  with jmc@.
+
 2013-08-21 16:13  millert
 
-	* libexec/spamd/: Makefile, gdcopy.c, grey.c, grey.h: Remove the
+	* libexec/spamd/Makefile, libexec/spamd/gdcopy.c,
+	  libexec/spamd/grey.c, libexec/spamd/grey.h,
+	  usr.sbin/spamdb/Makefile, usr.sbin/spamdb/spamdb.c: Remove the
 	  use of time_t in the greylist db file and use int64_t instead
 	  with backwards compatibility for records with 32-bit times.  OK
 	  deraadt@ beck@
+
+2013-06-29 09:08  jmc
+
+	* usr.sbin/spamdb/spamdb.8: do not use Sx for sections outwith the
+	  page; man4 still to go...
+
+2013-04-22 19:49  otto
+
+	* usr.sbin/spamdb/spamdb.c: prepare for more time bits; ok millert@
+	  deraadt@
 
 2012-12-04 02:36  deraadt
 
 	* libexec/spamd/sync.c: rather than a mishmash of headers, this
 	  only needs <stdint.h> with guenther
 
+2012-12-04 02:24  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: remove some unnecessary
+	  sys/param.h inclusions
+
 2012-10-02 15:26  okan
 
-	* libexec/spamd/grey.c: while it's of little harm, it's also been
-	  5.5 years (and 8 releases), remove the db conversion from BTREE
-	  to HASH.
+	* libexec/spamd/grey.c, usr.sbin/spamdb/spamdb.c: while it's of
+	  little harm, it's also been 5.5 years (and 8 releases), remove
+	  the db conversion from BTREE to HASH.
 
 	  ok beck@
 
@@ -594,6 +739,11 @@
 
 	* libexec/spamd/spamd.c: use warn() instead of perror(), like the
 	  rest of the code does from Liam J. Foy
+
+2012-06-04 15:27  jmc
+
+	* usr.sbin/spamdb/spamdb.8: add a little vertical whitespace, for
+	  consistency; from robert peichaer org
 
 2012-04-19 19:11  deraadt
 
@@ -660,6 +810,16 @@
 
 	  ok beck
 
+2009-09-09 16:05  claudio
+
+	* libexec/spamd-setup/spamd-setup.c: Change the way memory is
+	  allocated to reduce memory footprint. Loading the large uatraps
+	  uses now around 8 times less memory. Other cleanup includes a
+	  fast implementation of imask() (stolen from bgpd), killing some
+	  unused code and try to estimate the memory needed in
+	  add_blacklist() to reduce the realloc() calls.  Tested by many
+	  (sthen, matthieu, Stephan A. Rickauer) OK beck@, sthen@
+
 2009-09-07 09:43  jmc
 
 	* libexec/spamd/spamd.8: the example pf rules should be "pass in",
@@ -669,6 +829,12 @@
 
 	* libexec/spamd/spamd.8: match samples here with pf.conf(5) sample
 	  ruleset following recent pf changes ok henning@
+
+2009-06-02 22:38  ray
+
+	* libexec/spamd-setup/spamd-setup.c: Protect errno.
+
+	  OK millert
 
 2009-05-20 20:37  thib
 
@@ -709,6 +875,13 @@
 	* libexec/spamd/grey.c: fix slow memory leak, spotted by Max Laier
 	  and Artis Caune ok deraadt@, oga@, otto@
 
+2009-02-19 17:11  jmc
+
+	* libexec/spamd-setup/spamd-setup.8: correct description of
+	  spamdb-setup blacklist only mode; fixes documentation/6083;
+
+	  original diff and pr from Kami Petersen ok sthen
+
 2009-02-17 22:07  jmc
 
 	* libexec/spamd/spamd.8: clarification for the MX stuff; requested
@@ -718,6 +891,27 @@
 
 	* libexec/spamd/grey.c: time_t is signed, so use INT_MAX rather
 	  than UINT_MAX when parsing a time_t with strtonum
+
+2008-10-03 19:03  jmc
+
+	* libexec/spamd-setup/spamd-setup.8: beef up the description of -D
+	  a little, and don;t imply the option somehow terrorises
+	  spamd-setup;
+
+2008-10-03 18:58  jmc
+
+	* libexec/spamd-setup/: spamd-setup.8, spamd-setup.c: -D before -d;
+
+2008-10-03 14:25  deraadt
+
+	* libexec/spamd-setup/: spamd-setup.8, spamd-setup.c: New option -D
+	  to daemonize spamd-setup for early bootup use.  This avoids
+	  spamd-setup hanging if there are various (network?) issues and
+	  the system not proceeding to multiuser so that this can be
+	  debugged.  We do not use & for startup in /etc/rc because this
+	  makes the spamd-setup a child of the rc scripts after bootup
+	  (that is gross) Problem reported in PR 5864, change discussed
+	  with beck, ok millert
 
 2008-09-20 20:38  jmc
 
@@ -765,6 +959,12 @@
 	  aligned, thus timeout    values were incorrectly sent by 64-bit
 	  machines ok beck
 
+2008-05-17 10:48  millert
+
+	* usr.sbin/spamdb/spamdb.c: If the -T or -t flag is given, the key
+	  must be an email address so check that it contains an @ sign.
+	  Prompted by jmc@, OK beck@.
+
 2008-05-09 07:09  deraadt
 
 	* libexec/spamd/: sync.c, sync.h: As was done in dhcpd, insert pad
@@ -805,8 +1005,8 @@
 
 2007-09-02 15:19  deraadt
 
-	* libexec/spamd/sdl.c: use calloc() to avoid malloc(n * m)
-	  overflows; checked by djm canacar jsg
+	* libexec/: spamd/sdl.c, spamd-setup/spamd-setup.c: use calloc() to
+	  avoid malloc(n * m) overflows; checked by djm canacar jsg
 
 2007-08-16 04:42  ray
 
@@ -840,9 +1040,15 @@
 	* libexec/spamd/spamd.8: s/is is/it is/.  From Jim Razmus, jim (at)
 	  bonetruck (dot) org; thanks.
 
+2007-05-31 20:00  cnst
+
+	* usr.sbin/spamdb/spamdb.c: fix PR 5475: 'empty spamtrap address
+	  makes corrupted database'; ok beck@
+
 2007-05-31 19:19  jmc
 
-	* libexec/spamd/spamd.8: convert to new .Dd format;
+	* libexec/spamd/spamd.8, libexec/spamd-setup/spamd-setup.8,
+	  usr.sbin/spamdb/spamdb.8: convert to new .Dd format;
 
 2007-05-26 23:35  jmc
 
@@ -872,6 +1078,11 @@
 	  redefined in netdb.h to a zero sized array, so memory corruption
 	  occurs when writing the field.  problem encountered by Jeremy C.
 	  Reed. ok reyk@
+
+2007-04-04 13:45  jmc
+
+	* usr.sbin/spamdb/spamdb.8: document correctly WHITE format; ok
+	  beck fixes system/5432 from Ullrich 'Jason' Haag
 
 2007-03-29 17:39  kjell
 
@@ -957,6 +1168,11 @@
 
 	* libexec/spamd/grey.c: log when we trap a host.
 
+2007-03-08 07:55  jmc
+
+	* libexec/spamd-setup/spamd-setup.8: update to describe current
+	  behaviour; with some help from millert and beck
+
 2007-03-07 21:35  millert
 
 	* libexec/spamd/spamd.8: Add some emphasis for easier reading and
@@ -988,6 +1204,10 @@
 	  than the primary one. spamd will trap hosts that contact this
 	  address first without first contacting the primary.  - get it in,
 	  deraadt@
+
+2007-03-06 10:51  jmc
+
+	* usr.sbin/spamdb/spamdb.8: minor tweak;
 
 2007-03-06 09:00  jmc
 
@@ -1144,6 +1364,21 @@
 	  people don't get hooped by certain stupid sender verification
 	  schemes.
 
+2007-02-27 16:22  otto
+
+	* usr.sbin/spamdb/spamdb.c: open the db read-only if we're only
+	  looking. ok millert@ beck@ deraadt@
+
+2007-02-27 15:42  jmc
+
+	* libexec/spamd-setup/spamd-setup.8: spamd.conf lives in /etc/mail
+	  now;
+
+2007-02-27 15:41  jmc
+
+	* libexec/spamd-setup/spamd-setup.8: fix synopsis and order
+	  options;
+
 2007-02-27 15:38  jmc
 
 	* libexec/spamd/spamd.8: initial shot at making greylisting seem
@@ -1155,14 +1390,25 @@
 
 2007-02-27 02:10  beck
 
-	* libexec/spamd/: grey.h, spamd.8, spamd.c: Flag day for spamd - 1)
-	  config files move to /etc/mail 2) -g option goes away in
-	  spamd-setup and spamd - greylisting is now the default 3) option
-	  change to spamd, -b addr becomes -l addr.  4) -b option in
+	* libexec/: spamd/grey.h, spamd/spamd.8, spamd/spamd.c,
+	  spamd-setup/spamd-setup.8, spamd-setup/spamd-setup.c: Flag day
+	  for spamd - 1) config files move to /etc/mail 2) -g option goes
+	  away in spamd-setup and spamd - greylisting is now the default 3)
+	  option change to spamd, -b addr becomes -l addr.  4) -b option in
 	  spamd-setup and spamd to turn on old blacklisting mode.
 
 	  Man page shortly to be flensed to make this easier to explain ok
 	  deraadt@ millert@
+
+2007-02-26 22:50  millert
+
+	* usr.sbin/spamdb/spamdb.c: Error out if the -t or -T options are
+	  specified without -a or -d.  OK beck@
+
+2007-02-25 22:59  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Add usage() and error out if
+	  given bogus arguments.
 
 2007-02-25 22:04  jmc
 
@@ -1177,9 +1423,10 @@
 
 2007-02-24 19:28  millert
 
-	* libexec/spamd/spamd.8: When greylisting we don't actually need to
-	  use the <spamd> pf table.  We just do no-rdr for things in
-	  <spamd-white> and rdr the rest to spamdb.  OK beck@
+	* libexec/: spamd/spamd.8, spamd-setup/spamd-setup.8,
+	  spamd-setup/spamd-setup.c: When greylisting we don't actually
+	  need to use the <spamd> pf table.  We just do no-rdr for things
+	  in <spamd-white> and rdr the rest to spamdb.	OK beck@
 
 2007-02-24 08:48  jmc
 
@@ -1192,10 +1439,11 @@
 
 2007-02-23 22:40  beck
 
-	* libexec/spamd/: grey.c, spamd.c: Make spamd include the HELO/EHLO
-	  identification string sent by the connecting hosts in the tuple
-	  key when greylisting. catches a few more bogus hosts and will let
-	  us trap based on HELO later.
+	* libexec/spamd/grey.c, libexec/spamd/spamd.c,
+	  usr.sbin/spamdb/spamdb.8, usr.sbin/spamdb/spamdb.c: Make spamd
+	  include the HELO/EHLO identification string sent by the
+	  connecting hosts in the tuple key when greylisting. catches a few
+	  more bogus hosts and will let us trap based on HELO later.
 
 	  Changes spamdb(8) output to include the new field.
 
@@ -1218,24 +1466,53 @@
 
 2007-02-23 19:22  beck
 
-	* libexec/spamd/: grey.c, grey.h, spamd.8, spamd.c: greytrapping
-	  improvements	 1) remove requirement for <> around spamtrap
-	  addresses  2) add support for /etc/spamd/alloweddomains to
-	  specify	     suffixes for which any destinations that don't
-	  match 	   get trapped
+	* libexec/spamd/grey.c, libexec/spamd/grey.h,
+	  libexec/spamd/spamd.8, libexec/spamd/spamd.c,
+	  usr.sbin/spamdb/spamdb.8: greytrapping improvements	      1)
+	  remove requirement for <> around spamtrap addresses  2) add
+	  support for /etc/spamd/alloweddomains to specify
+	  suffixes for which any destinations that don't match
+	  get trapped
 
 		  various knf's by theo, feedback from jmc, millert,
 	  deraadt
 
+2007-02-14 01:16  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Fix some realloc() off-by-one
+	  errors found by ray@.  Also simplify fix_quoted_colons() to avoid
+	  realloc entirely since the output buffer is at most 2x the length
+	  of the input buffer.	Parts adapted from a diff from tdeval@.  OK
+	  ray@, beck@
+
+2007-02-09 19:12  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Fix off by one in blacklist
+	  memory allocation.  From tdeval@
+
 2007-01-04 21:41  beck
 
-	* libexec/spamd/grey.c: 	Using DB_BTREE for spamd is wrong,
-	  order is never required
+	* libexec/spamd/grey.c, usr.sbin/spamdb/spamdb.c:	  Using
+	  DB_BTREE for spamd is wrong, order is never required
 	  and the rebalancing really slags big databases. Make spamd use
 	  DB_HASH instead, and convert if the old type is noticed on
 	  startup.
 
 	  Testing by me, djm, ian, others ok deraadt@, millert@, djm@
+
+2006-12-09 20:04  jmc
+
+	* usr.sbin/spamdb/: spamdb.8, spamdb.c: better synopsis/usage and a
+	  couple wee fixes; mostly ok beck
+
+2006-12-09 17:13  beck
+
+	* usr.sbin/spamdb/: spamdb.8, spamdb.c: make spamdb take multiple
+	  add/delete arguments, thus making it much easier to do bulk
+	  add/deletes without opening and locking the database for each
+	  one. testing by scads of people on tech@
+
+	  Ok deraadt@ jmc@
 
 2006-12-07 21:10  otto
 
@@ -1293,6 +1570,44 @@
 
 	  ok beck@
 
+2006-05-11 15:37  dhill
+
+	* libexec/spamd-setup/spamd-setup.c: fix some type definitions
+
+	  ok beck
+
+2006-04-12 12:53  dhill
+
+	* usr.sbin/spamdb/spamdb.c: delint
+
+	  ok beck@
+
+2006-03-26 23:54  kjell
+
+	* libexec/spamd-setup/spamd-setup.c: Remove an extraneous prototype
+	  From Andrey Matveev
+
+2006-03-26 19:56  kjell
+
+	* libexec/spamd-setup/spamd-setup.c: More KNF. Prodding from ray@
+	  No binary change.
+
+2006-03-26 19:18  kjell
+
+	* libexec/spamd-setup/spamd-setup.c: Get this closer to KNF (get
+	  rid of block-declared vars) ok beck@
+
+2006-03-26 05:21  kjell
+
+	* libexec/spamd-setup/spamd-setup.c: KNF. No binary change.
+
+2006-03-15 01:32  dhill
+
+	* usr.sbin/spamdb/spamdb.c: Add missing function declarations
+	  Sprinkle some const
+
+	  OK beck@
+
 2006-03-14 22:49  beck
 
 	* libexec/spamd/spamd.c: spamd can show the wrong IP address to
@@ -1300,6 +1615,11 @@
 	  connecting address was being pointed to the on-stack copy.
 	  Spotted (and fix suggested) by Michael Durket in pr 5046 ok
 	  deraadt@
+
+2006-01-17 17:52  millert
+
+	* libexec/spamd-setup/spamd-setup.c: Include <sys/param.h> to get
+	  MAX macro
 
 2005-12-01 15:21  tom
 
@@ -1320,6 +1640,16 @@
 
 	* libexec/spamd/spamd.c: spacing
 
+2005-10-07 21:41  jmc
+
+	* usr.sbin/spamdb/spamdb.8: give an example email address - this is
+	  important as we need to show angle brackets are necessary;
+
+	  better wording;
+
+	  from ray lai, who remembered to prod bob and i again when we
+	  forgot; ok beck@ in a slightly different incarnation;
+
 2005-08-06 19:52  jmc
 
 	* libexec/spamd/spamd.8: replace port number 8025 w/ symbolic
@@ -1335,7 +1665,8 @@
 
 2005-05-24 22:23  millert
 
-	* libexec/spamd/Makefile: Remove -ansi as that means expose only
+	* libexec/spamd/Makefile, libexec/spamd-setup/Makefile,
+	  usr.sbin/spamdb/Makefile: Remove -ansi as that means expose only
 	  C89 interfaces.
 
 2005-05-23 21:08  frantzen
@@ -1353,6 +1684,14 @@
 	* libexec/spamd/spamd.8: - describe start up better - note that
 	  greylisting does stutter slightly - make clear role of spamdb and
 	  spamd.conf - few minor tweaks
+
+	  ok beck@
+
+2005-05-16 17:31  jmc
+
+	* usr.sbin/spamdb/spamdb.8: - improve option descriptions - note
+	  expected format of "key" - note that date -r may help understand
+	  spamdb output - spacing
 
 	  ok beck@
 
@@ -1376,21 +1715,43 @@
 
 		  feedback from jmc@, deraadt@,   ok deraadt@
 
+2005-03-12 23:31  jmc
+
+	* usr.sbin/spamdb/spamdb.8: remove useless sentence; ok beck@
+
 2005-03-12 00:02  beck
 
 	* libexec/spamd/grey.c: asprintf in place of strdup really is kind
 	  of lame ok millert@
 
+2005-03-11 23:45  beck
+
+	* usr.sbin/spamdb/spamdb.c: freeaddrinfo() isn't needed on the
+	  error path from getaddrinfo().  ok claudio@
+
+2005-03-11 23:27  beck
+
+	* usr.sbin/spamdb/spamdb.c: fix usage to reflect new reality, ok
+	  jmc@
+
 2005-03-11 23:09  beck
 
-	* libexec/spamd/: grey.c, grey.h, spamd.8, spamd.c: "Greytrapping"
-	  for spamd - allow for spamd greylisting to maintain a list of
-	  spamtrap destination addresses in the spamd database. When a
-	  spamtrap address gets an attempted greylist delivery, blacklist
-	  the offending host for a day. Does not affect hosts already
-	  whitelisted.
+	* libexec/spamd/grey.c, libexec/spamd/grey.h,
+	  libexec/spamd/spamd.8, libexec/spamd/spamd.c,
+	  usr.sbin/spamdb/spamdb.8, usr.sbin/spamdb/spamdb.c:
+	  "Greytrapping" for spamd - allow for spamd greylisting to
+	  maintain a list of spamtrap destination addresses in the spamd
+	  database. When a spamtrap address gets an attempted greylist
+	  delivery, blacklist the offending host for a day. Does not affect
+	  hosts already whitelisted.
 
 	  ok deraadt@, jmc@, dhartmei@ to get it in so it can be whacked on
+
+2005-03-02 16:45  dhartmei
+
+	* libexec/spamd-setup/spamd-setup.c: process the last line of an
+	  address list even if it's not terminated by newline. found by Rod
+	  Whitworth. ok beck@
 
 2005-01-19 17:07  deraadt
 
@@ -1445,6 +1806,10 @@
 	* libexec/spamd/spamd.c: This should be info, from mike@tric.ru ok
 	  henning@
 
+2004-09-16 05:35  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: clean C for a change
+
 2004-09-15 00:46  deraadt
 
 	* libexec/spamd/grey.c: ARGSUSED before signal handler with unused
@@ -1475,9 +1840,9 @@
 
 2004-06-29 11:19  mickey
 
-	* libexec/spamd/spamd.c: absolutely no need to include
-	  machine/endian.h after sys/types.h and sys/types.h after
-	  sys/param.h
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: absolutely no
+	  need to include machine/endian.h after sys/types.h and
+	  sys/types.h after sys/param.h
 
 2004-06-21 17:07  itojun
 
@@ -1488,6 +1853,31 @@
 
 	* libexec/spamd/: grey.c, spamd.c: use getaddr/nameinfo for address
 	  resolution.  beck, henning ok
+
+2004-04-28 07:32  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: fd leaks; beck ok
+
+2004-04-27 21:25  itojun
+
+	* usr.sbin/spamdb/spamdb.c: getaddrinfo 4th arg has to be non-null.
+	  Gerard gerritsen
+
+2004-04-26 18:21  itojun
+
+	* usr.sbin/spamdb/spamdb.c: bzero hint before use.
+
+2004-04-25 17:32  itojun
+
+	* usr.sbin/spamdb/: spamdb.8, spamdb.c: use '|' as field separator,
+	  not ':' - for future IPv6 support
+
+2004-04-19 18:21  otto
+
+	* usr.sbin/spamdb/spamdb.c: Remove unused stuff; give error message
+	  if the db cannot be openened; set exit code.
+
+	  ok beck@
 
 2004-04-03 01:37  dhartmei
 
@@ -1537,6 +1927,11 @@
 	  to make it go away. Adjust daemon() call and logging
 	  appropriately.  ok henning@, millert@
 
+2004-03-13 09:27  jmc
+
+	* usr.sbin/spamdb/spamdb.8: - typos - new sentence, new line - tidy
+	  up a list
+
 2004-03-12 22:16  jmc
 
 	* libexec/spamd/spamd.8: sort options;
@@ -1556,11 +1951,21 @@
 	* libexec/spamd/spamd.c: fix bug where custom 450 messages are not
 	  displayed, found by yongari@kt-is.co.kr ok dhartmei@, millert@
 
+2004-03-11 18:14  beck
+
+	* usr.sbin/spamdb/spamdb.c: fix leak, found by Patrick Latifi
+	  <pat@eyeo.org> ok millert@, dhartmei@
+
+2004-03-11 18:09  beck
+
+	* usr.sbin/spamdb/spamdb.c: open O_RDONLY when listing ok millert@,
+	  dharmei@
+
 2004-03-11 17:48  millert
 
-	* libexec/spamd/grey.c: Remove sync() calls that immediately
-	  precede databse close().  Since close() calls sync() itself the
-	  standalone sync() is a no-op.  OK beck@
+	* libexec/spamd/grey.c, usr.sbin/spamdb/spamdb.c: Remove sync()
+	  calls that immediately precede databse close().  Since close()
+	  calls sync() itself the standalone sync() is a no-op.  OK beck@
 
 2004-03-11 17:29  beck
 
@@ -1595,6 +2000,11 @@
 	* libexec/spamd/spamd.8:
 	  typo; we do have spamlogd(8) not spamlog(8); ok beck@
 
+2004-03-01 17:47  beck
+
+	* usr.sbin/spamdb/: spamdb.8, spamdb.c: paranoia and cleanup,
+	  document output format ok millert@
+
 2004-03-01 17:03  otto
 
 	* libexec/spamd/grey.c: uset inet_pton(3) instead of home grown
@@ -1608,6 +2018,10 @@
 	  - make -G work - paranoia and cleanup suggestions from deraadt@
 	  ok millert@
 
+2004-02-27 19:41  david
+
+	* usr.sbin/spamdb/Makefile: fix CFLAGS -I ok deraadt@
+
 2004-02-26 08:52  beck
 
 	* libexec/spamd/grey.c: don't leak one here either.
@@ -1620,10 +2034,17 @@
 
 	* libexec/spamd/grey.h: Add ommitted copyright.
 
+2004-02-26 08:28  beck
+
+	* usr.sbin/spamdb/spamdb.c: don't double define PATH_SPAMD_DB -
+	  notice by pb
+
 2004-02-26 08:18  deraadt
 
-	* libexec/spamd/: grey.c, grey.h, sdl.c, sdl.h, spamd.c: paranoia;
-	  beck ok
+	* libexec/spamd/grey.c, libexec/spamd/grey.h, libexec/spamd/sdl.c,
+	  libexec/spamd/sdl.h, libexec/spamd/spamd.c,
+	  libexec/spamd-setup/spamd-setup.c, usr.sbin/spamdb/spamdb.c:
+	  paranoia; beck ok
 
 2004-02-26 07:38  deraadt
 
@@ -1631,15 +2052,43 @@
 
 2004-02-26 07:28  beck
 
-	* libexec/spamd/: Makefile, grey.c, grey.h, sdl.c, spamd.8,
-	  spamd.c: Add -g option for greylisting support for spamd. The
-	  greylisting techinque originates from a paper by Evan Harris
-	  which can be found at http://projects.puremagic.com/greylisting/.
-	  This implementation makes spamd allow for non-blacklisted
-	  addresses to be treated as "greylisted".  where they are tracked
-	  in a db file, and whitelisted by addition to a pf table when the
-	  same envelope from and to are retried from the same source IP
-	  address. Testing by many, ok deraadt@
+	* libexec/spamd/Makefile, libexec/spamd/grey.c,
+	  libexec/spamd/grey.h, libexec/spamd/sdl.c, libexec/spamd/spamd.8,
+	  libexec/spamd/spamd.c, usr.sbin/spamdb/Makefile,
+	  usr.sbin/spamdb/spamdb.8, usr.sbin/spamdb/spamdb.c: Add -g option
+	  for greylisting support for spamd. The greylisting techinque
+	  originates from a paper by Evan Harris which can be found at
+	  http://projects.puremagic.com/greylisting/. This implementation
+	  makes spamd allow for non-blacklisted addresses to be treated as
+	  "greylisted".  where they are tracked in a db file, and
+	  whitelisted by addition to a pf table when the same envelope from
+	  and to are retried from the same source IP address. Testing by
+	  many, ok deraadt@
+
+2004-01-29 17:41  jmc
+
+	* libexec/spamd-setup/spamd-setup.8: spamd-setup(8) does not take a
+	  file arg; from Okan Demirmen (PR 3657);
+
+	  ok deraadt@
+
+2004-01-21 16:00  deraadt
+
+	* libexec/spamd-setup/spamd-setup.8: clean from jmc
+
+2004-01-21 08:07  deraadt
+
+	* libexec/spamd-setup/: Makefile, spamd-setup.8, spamd-setup.c: New
+	  spamd configuration method.  Many people have trouble with the
+	  spam RBL sites being slow, so now we will provide the maps
+	  ourselves through our www mirrors around the world.  We can also
+	  now write our own internal translators for maps that are in bad
+	  formats, and place them into the www space in the correct format.
+	  tested by beck, djm
+
+2004-01-21 02:49  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: cleanup
 
 2004-01-21 01:55  deraadt
 
@@ -1747,15 +2196,17 @@
 
 2003-08-22 21:50  david
 
-	* libexec/spamd/sdl.c: pf spelling police ok dhartmei@ jmc@
+	* libexec/: spamd/sdl.c, spamd-setup/spamd-setup.c: pf spelling
+	  police ok dhartmei@ jmc@
 
 2003-07-29 18:39  deraadt
 
-	* libexec/spamd/spamd.c: spaces
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: spaces
 
 2003-07-06 21:57  deraadt
 
-	* libexec/spamd/sdl.c: bring protos into scope
+	* libexec/: spamd/sdl.c, spamd-setup/spamd-setup.c: bring protos
+	  into scope
 
 2003-07-02 22:44  deraadt
 
@@ -1763,7 +2214,12 @@
 
 2003-06-11 14:24  deraadt
 
-	* libexec/spamd/spamd.c: ansi cleanup; ok ian markus
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: ansi cleanup;
+	  ok ian markus
+
+2003-06-02 20:20  jason
+
+	* libexec/spamd-setup/spamd-setup.8: nuke clause 3 & 4
 
 2003-06-02 14:27  jmc
 
@@ -1778,6 +2234,20 @@
 
 	* libexec/spamd/spamd.c: This was using the wrong buffer, and wrong
 	  lengths. fix it from me and tedu, ok tedu@
+
+2003-05-16 01:01  beck
+
+	* libexec/spamd-setup/spamd-setup.c: use inet_net_pton, and fix
+	  probelem where spamd-setup would crash on a file consisting only
+	  of invalid input
+
+2003-04-28 19:13  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: return from main
+
+2003-04-28 01:34  deraadt
+
+	* libexec/spamd-setup/Makefile: I hate -Werror
 
 2003-04-15 07:16  deraadt
 
@@ -1832,13 +2302,19 @@
 
 2003-03-13 21:20  beck
 
-	* libexec/spamd/spamd.c: make spamd-setup/spamd use/require a
-	  reserved source port for the configuration connection.
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: make
+	  spamd-setup/spamd use/require a reserved source port for the
+	  configuration connection.
 
 2003-03-13 13:31  henning
 
 	* libexec/spamd/spamd.8: correct table usage in rdr example,
 	  spotted by todd
+
+2003-03-11 08:44  david
+
+	* libexec/spamd-setup/spamd-setup.8: new sentence, new line and
+	  whitespace at EOL ok jmc@
 
 2003-03-11 07:58  david
 
@@ -1847,6 +2323,15 @@
 2003-03-11 04:39  david
 
 	* libexec/spamd/spamd.8: new sentence, new line ok beck@
+
+2003-03-10 19:36  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: nothing of import
+
+2003-03-10 19:35  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: fix exit code, stupid bob,
+	  spotted by lebel
 
 2003-03-09 21:12  pvalchev
 
@@ -1864,14 +2349,20 @@
 
 2003-03-09 19:22  beck
 
-	* libexec/spamd/: spamd.8, spamd.c: Fix a few typos, Make spamd and
-	  spamd-setup use /etc/services to find their ports. Adds "spamd"
-	  and "spamd-cfg" services to /etc/services.  Mostly from Daniel
-	  Lucq <daniel@lucq.org>.
+	* libexec/: spamd/spamd.8, spamd/spamd.c,
+	  spamd-setup/spamd-setup.8, spamd-setup/spamd-setup.c: Fix a few
+	  typos, Make spamd and spamd-setup use /etc/services to find their
+	  ports. Adds "spamd" and "spamd-cfg" services to /etc/services.
+	  Mostly from Daniel Lucq <daniel@lucq.org>.
+
+2003-03-09 02:50  beck
+
+	* libexec/spamd-setup/spamd-setup.c: missed memset, found by
+	  dhartmei@
 
 2003-03-08 22:05  deraadt
 
-	* libexec/spamd/spamd.c: knf
+	* libexec/: spamd/spamd.c, spamd-setup/spamd-setup.c: knf
 
 2003-03-08 22:03  beck
 
@@ -1879,9 +2370,17 @@
 
 2003-03-08 21:36  jmc
 
-	* libexec/spamd/spamd.8: spamd typos;
+	* libexec/: spamd/spamd.8, spamd-setup/spamd-setup.8: spamd typos;
 
 	  ok beck@
+
+2003-03-08 19:33  beck
+
+	* libexec/spamd-setup/spamd-setup.8: move stuff to spamd.conf 5
+
+2003-03-08 18:29  deraadt
+
+	* libexec/spamd-setup/spamd-setup.c: KNF
 
 2003-03-08 18:23  beck
 
@@ -1893,8 +2392,9 @@
 
 2003-03-08 18:17  beck
 
-	* libexec/spamd/Makefile: spamd-setup, in c. ok deraadt@, he wants
-	  to clean in situ.
+	* libexec/: spamd/Makefile, spamd-setup/Makefile,
+	  spamd-setup/spamd-setup.8, spamd-setup/spamd-setup.c:
+	  spamd-setup, in c. ok deraadt@, he wants to clean in situ.
 
 2003-03-06 09:41  henning
 
