@@ -4,3 +4,5 @@
 *.full
 *.gz
 src/libexec/spamd/spamd
+src/libexec/spamd-setup/spamd-setup
+src/usr.sbin/spamdb/spamdb

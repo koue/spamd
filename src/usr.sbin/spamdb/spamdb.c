@@ -368,8 +368,10 @@ main(int argc, char **argv)
 		    action ? "writing" : "reading");
 	}
 
+#ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(1, "pledge");
+#endif
 
 	switch (action) {
 	case 0:

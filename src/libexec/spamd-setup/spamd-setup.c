@@ -39,6 +39,10 @@
 #include <unistd.h>
 #include <zlib.h>
 
+#ifndef __OpenBSD__
+#include <netinet/in.h>
+#endif
+
 #define PATH_FTP		"/usr/bin/ftp"
 #define PATH_PFCTL		"/sbin/pfctl"
 #define PATH_SPAMD_CONF		"/etc/mail/spamd.conf"
@@ -851,8 +855,10 @@ main(int argc, char *argv[])
 	spamd_uid = pw->pw_uid;
 	spamd_gid = pw->pw_gid;
 
+#ifdef __OpenBSD__
 	if (pledge("stdio rpath inet proc exec id", NULL) == -1)
 		err(1, "pledge");
+#endif
 
 	if (daemonize)
 		daemon(0, 0);

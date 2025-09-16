@@ -7,6 +7,7 @@ MAN=	spamd-setup.8
 LDADD=	-lz
 DPADD=	${LIBZ}
 
-CFLAGS+= -Wall -Wstrict-prototypes
+CFLAGS+= -Werror -Wstrict-prototypes
+CFLAGS+= -D__dead=''
 
 .include <bsd.prog.mk>
