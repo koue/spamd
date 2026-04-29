@@ -1,3 +1,29 @@
+2026-04-21 14:44  millert
+
+	* libexec/spamd/spamd.c: Fix handing of multi-line blacklist error
+	  strings in spamd.conf
+
+	  When appending the blacklist error string, spamd splits the
+	  message on a newline and continues the message on a new line.
+	  There was a bug where the current pointer was incremented too
+	  far, which resulted in the message being truncated at the newline
+	  instead of continued.
+
+	  For very long blacklist messages (around 8K) in spamd.conf, this
+	  could result in heap corruption.  However, this is very unlikely
+	  in practice.
+
+	  OK jsg@
+
+	  Reported by and fix from Dhiraj Mishra
+
+2026-04-02 17:23  deraadt
+
+	* libexec/spamd/spamd.c: If a fd satisfies both POLLIN and POLLOUT
+	  in the same cycle, but the POLLIN resulted in a file close, the
+	  POLLOUT runs incorrectly which matters in the TLS context which
+	  attempts to read after free.	from James J. Lippard ok millert
+
 2024-05-09 08:35  florian
 
 	* libexec/spamd/spamd.c: ctime(3) and ctime_r(3) can fail when
